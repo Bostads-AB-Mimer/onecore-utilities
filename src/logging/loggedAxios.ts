@@ -25,7 +25,9 @@ instance.interceptors.response.use((response) => {
   }
   logger.info(
     responseFields,
-    `Outgoing response: ${response.config.method?.toUpperCase()} ${response.config.url} ${response.status}`
+    `Outgoing response: ${response.config.method?.toUpperCase()} ${
+      response.config.url
+    } ${response.status}`
   )
   return response
 })

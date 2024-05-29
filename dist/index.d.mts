@@ -1,6 +1,7 @@
 import pino from 'pino';
 import Koa from 'koa';
 import * as axios from 'axios';
+export { axios as axiosTypes };
 
 declare const logger: pino.Logger<never>;
 

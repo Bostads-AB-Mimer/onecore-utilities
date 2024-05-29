@@ -50,6 +50,7 @@ var __async = (__this, __arguments, generator) => {
 // src/index.ts
 var src_exports = {};
 __export(src_exports, {
+  axiosTypes: () => axiosTypes,
   loggedAxios: () => loggedAxios_default,
   logger: () => logger_default,
   loggerMiddlewares: () => middlewares
@@ -90,33 +91,37 @@ var getCorrelationId = (ctx) => {
 var middlewares = {
   pre: (ctx, next) => {
     var _a;
-    ctx.logger = logger.child({ correlationId: getCorrelationId(ctx) });
-    ctx.logger.info(
-      {
-        request: {
-          path: ctx.path,
-          user: (_a = ctx.state) == null ? void 0 : _a.user,
-          method: ctx.method
-        }
-      },
-      "Incoming request"
-    );
+    if (ctx.path !== "/health") {
+      ctx.logger = logger.child({ correlationId: getCorrelationId(ctx) });
+      ctx.logger.info(
+        {
+          request: {
+            path: ctx.path,
+            user: (_a = ctx.state) == null ? void 0 : _a.user,
+            method: ctx.method
+          }
+        },
+        "Incoming request"
+      );
+    }
     return next();
   },
   post: (ctx, next) => __async(void 0, null, function* () {
     var _a;
     yield next();
-    ctx.logger.info(
-      {
-        request: {
-          path: ctx.path,
-          user: (_a = ctx.state) == null ? void 0 : _a.user,
-          method: ctx.method,
-          status: ctx.status
-        }
-      },
-      "Incoming request complete"
-    );
+    if (ctx.path !== "/health") {
+      ctx.logger.info(
+        {
+          request: {
+            path: ctx.path,
+            user: (_a = ctx.state) == null ? void 0 : _a.user,
+            method: ctx.method,
+            status: ctx.status
+          }
+        },
+        "Incoming request complete"
+      );
+    }
   })
 };
 
@@ -150,8 +155,12 @@ instance.interceptors.response.use((response) => {
   return response;
 });
 var loggedAxios_default = instance;
+
+// src/index.ts
+var axiosTypes = __toESM(require("axios"));
 // Annotate the CommonJS export names for ESM import in node:
 0 && (module.exports = {
+  axiosTypes,
   loggedAxios,
   logger,
   loggerMiddlewares

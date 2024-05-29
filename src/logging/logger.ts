@@ -43,18 +43,21 @@ export const middlewares = {
     ctx: Koa.ParameterizedContext<Koa.DefaultState, Koa.DefaultContext, any>,
     next: Koa.Next
   ) => {
-    ctx.logger = logger.child({ correlationId: getCorrelationId(ctx) })
+    if (ctx.path !== '/health') {
+      ctx.logger = logger.child({ correlationId: getCorrelationId(ctx) })
 
-    ctx.logger.info(
-      {
-        request: {
-          path: ctx.path,
-          user: ctx.state?.user,
-          method: ctx.method,
+      ctx.logger.info(
+        {
+          request: {
+            path: ctx.path,
+            user: ctx.state?.user,
+            method: ctx.method,
+          },
         },
-      },
-      'Incoming request'
-    )
+        'Incoming request'
+      )
+    }
+
     return next()
   },
   post: async (
@@ -63,16 +66,18 @@ export const middlewares = {
   ) => {
     await next()
 
-    ctx.logger.info(
-      {
-        request: {
-          path: ctx.path,
-          user: ctx.state?.user,
-          method: ctx.method,
-          status: ctx.status,
+    if (ctx.path !== '/health') {
+      ctx.logger.info(
+        {
+          request: {
+            path: ctx.path,
+            user: ctx.state?.user,
+            method: ctx.method,
+            status: ctx.status,
+          },
         },
-      },
-      'Incoming request complete'
-    )
+        'Incoming request complete'
+      )
+    }
   },
 }
