@@ -28,7 +28,14 @@ const pinoOptions = {}
 const logger = pino(
   pinoOptions,
   multistream([{ stream: prettyStream }, { stream: streamToElastic }])
-).child({ application: { name: 'core', environment: process.env.NODE_ENV } })
+).child({
+  application: {
+    name: process.env.APPLICATION_NAME || 'application',
+    environment: process.env.NODE_ENV,
+  },
+})
+
+console.log(process.env.APPLICATION_NAME)
 
 export default logger
 

@@ -44,7 +44,13 @@ var pinoOptions = {};
 var logger = pino(
   pinoOptions,
   multistream([{ stream: prettyStream }, { stream: streamToElastic }])
-).child({ application: { name: "core", environment: process.env.NODE_ENV } });
+).child({
+  application: {
+    name: process.env.APPLICATION_NAME || "application",
+    environment: process.env.NODE_ENV
+  }
+});
+console.log(process.env.APPLICATION_NAME);
 var logger_default = logger;
 var getCorrelationId = (ctx) => {
   var _a;
@@ -99,7 +105,7 @@ instance.interceptors.request.use((request) => {
   };
   logger_default.info(
     requestFields,
-    `Outgoing request: ${(_a = request.method) == null ? void 0 : _a.toUpperCase()} ${request.url}`
+    `HTTP request: ${(_a = request.method) == null ? void 0 : _a.toUpperCase()} ${request.url}`
   );
   return request;
 });
@@ -112,7 +118,7 @@ instance.interceptors.response.use((response) => {
   };
   logger_default.info(
     responseFields,
-    `Outgoing response: ${(_a = response.config.method) == null ? void 0 : _a.toUpperCase()} ${response.config.url} ${response.status}`
+    `HTTP response: ${(_a = response.config.method) == null ? void 0 : _a.toUpperCase()} ${response.config.url} ${response.status}`
   );
   return response;
 });

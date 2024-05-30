@@ -31,6 +31,7 @@ app.use(loggerMiddlewares.post)
 ### Configuration
 
 Set environment variable `ELASTICSEARCH_LOGGING_HOST` to the full url of your ElasticSearch server.
+Set environment variable `APPLICATION_NAME` to the name of the application.
 
 ## loggedAxios
 
@@ -40,6 +41,7 @@ completions to logger, with a subset of fields from the Axios request and respon
 ### Configuration
 
 Set environment variable `ELASTICSEARCH_LOGGING_HOST` to the full url of your ElasticSearch server.
+Set environment variable `APPLICATION_NAME` to the name of the application.
 
 ### General use
 
