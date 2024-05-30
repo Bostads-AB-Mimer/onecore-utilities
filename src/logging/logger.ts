@@ -4,6 +4,10 @@ import { multistream } from 'pino-multi-stream'
 import pretty from 'pino-pretty'
 import Koa from 'koa'
 import { randomUUID } from 'crypto'
+import {
+  storage,
+  getCorrelationId as getCorrelationIdFromStorage,
+} from './loggingStorage'
 
 const streamToElastic = pinoElastic({
   index: 'onecore-logging',
@@ -23,19 +27,23 @@ const prettyStream = pretty({
   messageFormat: '{msg} {request.path} {request.status}',
 })
 
-const pinoOptions = {}
+const pinoOptions = {
+  mixin() {
+    return { correlationId: getCorrelationIdFromStorage() }
+  },
+}
 
-const logger = pino(
-  pinoOptions,
-  multistream([{ stream: prettyStream }, { stream: streamToElastic }])
-).child({
+const childProperties = {
   application: {
     name: process.env.APPLICATION_NAME || 'application',
     environment: process.env.NODE_ENV,
   },
-})
+}
 
-console.log(process.env.APPLICATION_NAME)
+const logger = pino(
+  pinoOptions,
+  multistream([{ stream: prettyStream }, { stream: streamToElastic }])
+).child(childProperties)
 
 export default logger
 
@@ -46,12 +54,15 @@ const getCorrelationId = (
 }
 
 export const middlewares = {
-  pre: (
+  pre: async (
     ctx: Koa.ParameterizedContext<Koa.DefaultState, Koa.DefaultContext, any>,
     next: Koa.Next
   ) => {
+    let correlationId = getCorrelationId(ctx)
+
+    ctx.correlationId = correlationId
     if (ctx.path !== '/health') {
-      ctx.logger = logger.child({ correlationId: getCorrelationId(ctx) })
+      ctx.logger = logger.child({ correlationId: ctx.correlationId })
 
       ctx.logger.info(
         {
@@ -65,7 +76,13 @@ export const middlewares = {
       )
     }
 
-    return next()
+    if (storage) {
+      await storage.run({ correlationId: correlationId }, async () => {
+        return await next()
+      })
+    } else {
+      return await next()
+    }
   },
   post: async (
     ctx: Koa.ParameterizedContext<Koa.DefaultState, Koa.DefaultContext, any>,

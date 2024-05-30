@@ -51,9 +51,11 @@ var __async = (__this, __arguments, generator) => {
 var src_exports = {};
 __export(src_exports, {
   axiosTypes: () => axiosTypes,
+  getCorrelationId: () => getCorrelationId,
   loggedAxios: () => loggedAxios_default,
   logger: () => logger_default,
-  loggerMiddlewares: () => middlewares
+  loggerMiddlewares: () => middlewares,
+  loggingStorage: () => storage
 });
 module.exports = __toCommonJS(src_exports);
 
@@ -63,6 +65,21 @@ var import_pino_elasticsearch = __toESM(require("pino-elasticsearch"));
 var import_pino_multi_stream = require("pino-multi-stream");
 var import_pino_pretty = __toESM(require("pino-pretty"));
 var import_crypto = require("crypto");
+
+// src/logging/loggingStorage.ts
+var import_async_hooks = require("async_hooks");
+var storage = new import_async_hooks.AsyncLocalStorage();
+var getCorrelationId = () => {
+  const store = storage.getStore();
+  if (store) {
+    const correlationId = store.correlationId;
+    return correlationId;
+  } else {
+    return void 0;
+  }
+};
+
+// src/logging/logger.ts
 var streamToElastic = (0, import_pino_elasticsearch.default)({
   index: "onecore-logging",
   node: process.env.ELASTICSEARCH_LOGGING_HOST || "http://localhost:9200",
@@ -78,27 +95,34 @@ var prettyStream = (0, import_pino_pretty.default)({
   singleLine: true,
   messageFormat: "{msg} {request.path} {request.status}"
 });
-var pinoOptions = {};
-var logger = (0, import_pino.default)(
-  pinoOptions,
-  (0, import_pino_multi_stream.multistream)([{ stream: prettyStream }, { stream: streamToElastic }])
-).child({
+var pinoOptions = {
+  mixin() {
+    console.log("Mixin getting correlation id from storage", storage.getStore());
+    return { correlationId: getCorrelationId() };
+  }
+};
+var childProperties = {
   application: {
     name: process.env.APPLICATION_NAME || "application",
     environment: process.env.NODE_ENV
   }
-});
-console.log(process.env.APPLICATION_NAME);
+};
+var logger = (0, import_pino.default)(
+  pinoOptions,
+  (0, import_pino_multi_stream.multistream)([{ stream: prettyStream }, { stream: streamToElastic }])
+).child(childProperties);
 var logger_default = logger;
-var getCorrelationId = (ctx) => {
+var getCorrelationId2 = (ctx) => {
   var _a;
   return (_a = ctx.header["x-correlation-id"]) != null ? _a : (0, import_crypto.randomUUID)();
 };
 var middlewares = {
-  pre: (ctx, next) => {
+  pre: (ctx, next) => __async(void 0, null, function* () {
     var _a;
+    let correlationId = getCorrelationId2(ctx);
+    ctx.correlationId = correlationId;
     if (ctx.path !== "/health") {
-      ctx.logger = logger.child({ correlationId: getCorrelationId(ctx) });
+      ctx.logger = logger.child({ correlationId: ctx.correlationId });
       ctx.logger.info(
         {
           request: {
@@ -110,8 +134,14 @@ var middlewares = {
         "Incoming request"
       );
     }
-    return next();
-  },
+    if (storage) {
+      yield storage.run({ correlationId }, () => __async(void 0, null, function* () {
+        return yield next();
+      }));
+    } else {
+      return yield next();
+    }
+  }),
   post: (ctx, next) => __async(void 0, null, function* () {
     var _a;
     yield next();
@@ -134,12 +164,24 @@ var middlewares = {
 // src/logging/loggedAxios.ts
 var import_axios = __toESM(require("axios"));
 var instance = import_axios.default.create();
+var getCorrelationId3 = () => {
+  if (storage && storage.getStore()) {
+    const correlationId = storage.getStore().correlationId;
+    return correlationId;
+  }
+  return null;
+};
 instance.interceptors.request.use((request) => {
   var _a;
+  const correlationId = getCorrelationId3();
+  if (correlationId) {
+    request.headers["x-correlation-id"] = correlationId;
+  }
   const requestFields = {
     url: request.url,
     headers: request.headers,
-    method: request.method
+    method: request.method,
+    correlationId: request.headers["x-correlation-id"]
   };
   logger_default.info(
     requestFields,
@@ -149,10 +191,12 @@ instance.interceptors.request.use((request) => {
 });
 instance.interceptors.response.use((response) => {
   var _a;
+  const correlationId = getCorrelationId3();
   const responseFields = {
     status: response.status,
     headers: response.headers,
-    url: response.config.url
+    url: response.config.url,
+    correlationId
   };
   logger_default.info(
     responseFields,
@@ -167,8 +211,10 @@ var axiosTypes = __toESM(require("axios"));
 // Annotate the CommonJS export names for ESM import in node:
 0 && (module.exports = {
   axiosTypes,
+  getCorrelationId,
   loggedAxios,
   logger,
-  loggerMiddlewares
+  loggerMiddlewares,
+  loggingStorage
 });
 //# sourceMappingURL=index.js.map
