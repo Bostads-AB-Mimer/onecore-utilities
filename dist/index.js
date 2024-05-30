@@ -97,7 +97,6 @@ var prettyStream = (0, import_pino_pretty.default)({
 });
 var pinoOptions = {
   mixin() {
-    console.log("Mixin getting correlation id from storage", storage.getStore());
     return { correlationId: getCorrelationId() };
   }
 };
