@@ -38,14 +38,13 @@ var prettyStream = pretty({
   colorize: true,
   ignore: "application,request",
   singleLine: true,
-  messageFormat: "{msg} {request.path} {request.status}"
+  messageFormat: "{msg} {request.method} {request.path} {request.status}"
 });
 var pinoOptions = {};
 var logger = pino(
   pinoOptions,
   multistream([{ stream: prettyStream }, { stream: streamToElastic }])
 ).child({ application: { name: "core", environment: process.env.NODE_ENV } });
-var logger_default = logger;
 var getCorrelationId = (ctx) => {
   var _a;
   return (_a = ctx.header["x-correlation-id"]) != null ? _a : randomUUID();
@@ -85,37 +84,36 @@ var middlewares = {
 
 // src/logging/loggedAxios.ts
 import axios from "axios";
-var instance = axios.create();
-instance.interceptors.request.use((request) => {
+axios.interceptors.request.use((request) => {
   var _a;
   const requestFields = {
     url: request.url,
     headers: request.headers,
     method: request.method
   };
-  logger_default.info(
+  logger.info(
     requestFields,
     `Outgoing request: ${(_a = request.method) == null ? void 0 : _a.toUpperCase()} ${request.url}`
   );
   return request;
 });
-instance.interceptors.response.use((response) => {
+axios.interceptors.response.use((response) => {
   var _a;
   const responseFields = {
     status: response.status,
     headers: response.headers,
     url: response.config.url
   };
-  logger_default.info(
+  logger.info(
     responseFields,
     `Outgoing response: ${(_a = response.config.method) == null ? void 0 : _a.toUpperCase()} ${response.config.url} ${response.status}`
   );
   return response;
 });
-var loggedAxios_default = instance;
+var loggedAxios_default = axios;
 export {
   loggedAxios_default as loggedAxios,
-  logger_default as logger,
+  logger,
   middlewares as loggerMiddlewares
 };
 //# sourceMappingURL=index.mjs.map

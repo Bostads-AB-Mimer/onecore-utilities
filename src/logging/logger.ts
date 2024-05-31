@@ -20,17 +20,17 @@ const prettyStream = pretty({
   colorize: true,
   ignore: 'application,request',
   singleLine: true,
-  messageFormat: '{msg} {request.path} {request.status}',
+  messageFormat: '{msg} {request.method} {request.path} {request.status}',
 })
 
 const pinoOptions = {}
 
-const logger = pino(
+export const logger = pino(
   pinoOptions,
   multistream([{ stream: prettyStream }, { stream: streamToElastic }])
 ).child({ application: { name: 'core', environment: process.env.NODE_ENV } })
 
-export default logger
+//export default logger
 
 const getCorrelationId = (
   ctx: Koa.ParameterizedContext<Koa.DefaultState, Koa.DefaultContext, any>
