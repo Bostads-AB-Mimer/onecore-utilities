@@ -6,8 +6,8 @@ import * as axiosTypes from 'axios'
 export {
   logger,
   loggedAxios,
+  axiosTypes,
   storage as loggingStorage,
   getCorrelationId,
-  axiosTypes,
   middlewares as loggerMiddlewares,
 }

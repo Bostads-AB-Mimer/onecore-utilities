@@ -1,6 +1,5 @@
 import axios from 'axios'
 import { logger } from './logger'
-
 import { storage } from './loggingStorage'
 
 const getCorrelationId = (): string | undefined | null => {
