@@ -22,7 +22,10 @@
     }
   },
   "rules": {
-    "node/no-unsupported-features/es-syntax": ["error", { "ignores": ["modules"] }]
+    "node/no-unsupported-features/es-syntax": ["error", { "ignores": ["modules"] }],
+    "node/no-extraneous-import": [
+      "error", { "allowModules": ["@elastic/elasticsearch", "@elastic/transport"] }
+    ]
   },
   "overrides": [{
     "files": "src/**/*.test.ts",
