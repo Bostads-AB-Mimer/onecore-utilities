@@ -12,13 +12,13 @@
  */
 
 import { ExtendableContext, Next, Request } from 'koa'
-import { z } from 'zod'
+import { z } from 'zod/v4'
 
 type ContextWithParsedRequest<B, Q> = ExtendableContext & {
   request: Request & {
     body: unknown
-    parsed_body: B extends z.ZodType ? z.infer<B> : never
-    parsed_query: Q extends z.ZodType ? z.infer<Q> : never
+    parsed_body: z.infer<B>
+    parsed_query: z.infer<Q>
   }
 }
 
