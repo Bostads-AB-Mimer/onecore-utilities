@@ -1,15 +1,18 @@
 import pino from 'pino';
-import Koa, { Context } from 'koa';
+import * as Koa from 'koa';
+import Koa__default, { Context } from 'koa';
 import axios__default from 'axios';
 import * as axios from 'axios';
 export { axios as axiosTypes };
 export { default as loggedAxios } from 'axios';
 import { AsyncLocalStorage } from 'async_hooks';
+import KoaRouter from '@koa/router';
+import { z } from 'zod';
 
 declare const logger: pino.Logger<never>;
 declare const middlewares: {
-    pre: (ctx: Koa.ParameterizedContext<Koa.DefaultState, Koa.DefaultContext, any>, next: Koa.Next) => Promise<any>;
-    post: (ctx: Koa.ParameterizedContext<Koa.DefaultState, Koa.DefaultContext, any>, next: Koa.Next) => Promise<void>;
+    pre: (ctx: Koa__default.ParameterizedContext<Koa__default.DefaultState, Koa__default.DefaultContext, any>, next: Koa__default.Next) => Promise<any>;
+    post: (ctx: Koa__default.ParameterizedContext<Koa__default.DefaultState, Koa__default.DefaultContext, any>, next: Koa__default.Next) => Promise<void>;
 };
 
 declare const setExclusionFilters: (exlusionFilters: RegExp[]) => void;
@@ -30,4 +33,12 @@ interface RouteMetadata {
 }
 declare const generateRouteMetadata: (ctx: Context, queryParams?: string[]) => RouteMetadata;
 
-export { generateRouteMetadata, getCorrelationId, logger, middlewares as loggerMiddlewares, storage as loggingStorage, setExclusionFilters as setAxiosExclusionFilters };
+declare function registerSchema(name: string, schema: z.ZodType): void;
+declare function swaggerMiddleware({ routes, schemas, serviceName, version, }: {
+    routes: string[];
+    schemas?: Record<string, z.ZodType>;
+    serviceName?: string;
+    version?: string;
+}): KoaRouter.Middleware<Koa.DefaultState, Koa.DefaultContext, unknown>;
+
+export { generateRouteMetadata, getCorrelationId, logger, middlewares as loggerMiddlewares, storage as loggingStorage, registerSchema, setExclusionFilters as setAxiosExclusionFilters, swaggerMiddleware };
